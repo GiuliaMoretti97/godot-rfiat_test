@@ -51,9 +51,9 @@ def KeplerianPropagatorJ2(
     A = J2 * n * ((Radius / semimajoraxis) ** 2.0) / aux1 ** 2.0
     B = J2 * n * (Radius / semimajoraxis) ** 2.0 / aux1 ** (3.0 / 2.0)
     
-    # Mean Values
-    true_anomaly_0 = core.astro.trueFromMean(mean_anomaly_0, eccentricity, tol)
     #! For this test the mean_n is not used so it is equal to n
+    # Mean Values
+    # true_anomaly_0 = core.astro.trueFromMean(mean_anomaly_0, eccentricity, tol)
     # aux = semimajoraxis **2 - 6.0 * J2 * Radius **2 * np.sin(inclination) **2 * np.cos( 2.0 * arg_perigee_0 + 2 * true_anomaly_0)
     #mean_semimajoraxis = (semimajoraxis + np.sqrt(aux)) / 2.0
     #mean_n = np.sqrt(GM / (mean_semimajoraxis**3))
@@ -94,8 +94,6 @@ def KeplerianPropagatorJ2(
         epoch = ephoch0 + t
         results.append(EpochXYZ(epoch, xyz[0], xyz[1], xyz[2]))
     return results
-    
-
     
     
 if __name__ == "__main__":

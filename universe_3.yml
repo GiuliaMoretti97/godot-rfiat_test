@@ -1,0 +1,138 @@
+version: "3.0"
+
+spacecraft:
+  - name: SC
+    mass: 0.0 kg
+
+ephemeris:
+  - name: DE421
+    files:
+      - /home/giulia/godot-lbte/data/de441.bsp
+    cache: false
+  - name: GM431
+    files:
+      - /home/giulia/godot-lbte/data/gm_de431.tpc
+    cache: false
+
+stations:
+  - name: earthStations
+    file: /home/giulia/godot-lbte/data/GroundStationsDatabase.json
+
+constants:
+  ephemeris:
+    - source: GM431
+  data:
+    EarthRadius : 6378.1366  # in km
+    EarthGM : 398600.4418  # in km^3/s^2
+    EarthJ2 : 0.0010826359  # Earth J2
+    MoonRadius : 1737.4  # in km
+    MoonGM : 4902.8
+    MoonJ2 : 0.0002033  # Moon J2
+    MoonFlattening : 1.00e-12
+    
+
+frames:
+  - name: DE421Ephemeris
+    type: Ephem
+    config:
+      source: DE421
+  # Earth Mean Ecliptic frame
+  - name: EME2000 
+    type: AxesOrient
+    config:
+      model: EMEJ2000
+  # Moon rotating frame
+  - name: Moon
+    type: AxesOrient
+    config:
+      model: MoonIAU2009
+  # ITRF
+  - name: ITRF
+    type: AxesOrient
+    config:
+      model: IERS2000
+      nutation: /home/giulia/godot-lbte/data/nutation2000A.ipf
+  
+#  Moon Gravity Field (GM, J2)
+sphericalHarmonics:
+  - name: MoonGravityField
+    type: Param
+    config:
+      gm: MoonGM
+      radius: MoonRadius
+      point: Moon
+      axes: Moon
+      degree: 2
+      order: 0
+      coeff: 
+        - key: "C_2_0"
+          value: -0.0002033
+        - key: "C_2_2"
+          value: 0.0
+        - key: "C_2_1"
+          value: 0.0
+        - key: "S_2_2"
+          value: 0.0
+        - key: "S_2_1"
+          value: 0.0
+  - name: EarthGravityField
+    type: Param
+    config:
+      gm: EarthGM
+      radius: EarthRadius
+      point: Earth
+      axes: ITRF
+      degree: 2
+      order: 0
+      coeff: 
+        - key: "C_2_0"
+          value: -0.0010826359
+        - key: "C_2_2"
+          value: 0.0
+        - key: "C_2_1"
+          value: 0.0
+        - key: "S_2_2"
+          value: 0.0
+        - key: "S_2_1"
+          value: 0.0
+
+
+bodies:
+  - name: Moon
+    point: Moon
+    gravity:
+      - MoonGravityField
+  - name: Earth
+    point: Earth
+    gravity:
+      - EarthGravityField
+
+gravity:
+  # Earth, Moon and Sun system gravity
+  - name: MoonGravityModel
+    bodies:
+      - Moon
+  - name: EarthGravityModel
+    bodies:
+      - Earth
+
+dynamics:
+  - name: MoonGravityOnly
+    type: SystemGravity
+    config:
+      model: MoonGravityModel
+  - name: EarthGravityOnly
+    type: SystemGravity
+    config:
+      model: EarthGravityModel
+
+  - name: SC_EarthLander_Moon_Occultation
+    type: Occultation
+    config:
+      observer: EarthLander
+      target: SC
+      occulter: Moon
+      occulterRadius: "1737.4 km"
+      solveLightTime: false
+
+

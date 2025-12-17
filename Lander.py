@@ -30,6 +30,79 @@ x = MoonRadius * (np.cos(latitude) * np.cos(longitude))
 y = MoonRadius * (np.cos(latitude) * np.sin(longitude))
 z = MoonRadius * (np.sin(latitude))
 
+def check_occultation(rx_pos, tx_pos, occ_pos, occ_radius):
+    """
+    Verifica l'occultazione della Luna.
+    Ritorna True se NON c'è occultazione (visibile), False se è occultato.
+    Args:
+        rx_pos (array-like): Posizione Ricevitore [x, y, z]
+        tx_pos (array-like): Posizione Trasmettitore [x, y, z]
+        moon_pos (array-like): Posizione Luna [x, y, z]
+        moon_radius (float): Raggio della Luna
+    """
+    # Conversione in array numpy per calcoli vettoriali
+    rx_pos = np.array(rx_pos, dtype=float)
+    tx_pos = np.array(tx_pos, dtype=float)
+    moon_pos = np.array(occ_pos, dtype=float)
+    # 1. Calcolo vettori relativi al centro della Luna (Moon Centered Frame)
+    # VB: MathModule.VecDiff(Receiver.Position, getMoonPosition_ECEF)
+    rx_moon = rx_pos - moon_pos
+    tx_moon = tx_pos - moon_pos
+    # 2. Calcolo delle distanze (Norme)
+    # VB: MathModule.GetNorm(...)
+    range_mc_rx = np.linalg.norm(rx_moon)
+    range_mc_tx = np.linalg.norm(tx_moon)
+    # Check di sicurezza come nel codice originale (evita errori di dominio nella radice quadrata)
+    if range_mc_rx < occ_radius:
+        range_mc_rx = occ_radius
+    if range_mc_tx < occ_radius:
+        range_mc_tx = occ_radius
+    # 3. Distanza all'orizzonte (Grazing distance)
+    # Teorema di Pitagora: sqrt(ipotenusa^2 - cateto^2)
+    m_graze_dist_rx = np.sqrt(range_mc_rx**2 - occ_radius**2)
+    m_graze_dist_tx = np.sqrt(range_mc_tx**2 - occ_radius**2)
+    # 4. Calcolo vettore e distanza tra TX e RX
+    # Nota: Nel codice VB 'RangeTXRX' è usato prima di essere definito esplicitamente,
+    # ma logicamente è la distanza tra i due punti.
+    tx_rx_vec = rx_pos - tx_pos  # Vettore da TX a RX
+    range_tx_rx = np.linalg.norm(tx_rx_vec)  # Distanza scalare
+    # 5. Controlli preliminari (Early Exits)
+    # Se la distanza tra i punti è inferiore alla distanza dell'orizzonte,
+    # la curvatura della luna non può bloccarli.
+    if range_tx_rx <= m_graze_dist_rx:
+        return True
+    if range_tx_rx <= m_graze_dist_tx:
+        return True
+    # 6. Calcolo Angoli di "Grazing" (Angolo limite)
+    # asin(Opposto / Ipotenusa)
+    m_graze_angle_rx = np.arcsin(occ_radius / range_mc_rx)
+    m_graze_angle_tx = np.arcsin(occ_radius / range_mc_tx)
+
+    # 7. Calcolo Angoli tra vettori
+    # Funzione helper interna per calcolare l'angolo tra due vettori
+    def get_angle(v1, v2):
+        unit_v1 = v1 / np.linalg.norm(v1)
+        unit_v2 = v2 / np.linalg.norm(v2)
+        dot_product = np.dot(unit_v1, unit_v2)
+        # Clip per evitare errori numerici fuori da [-1, 1]
+        dot_product = np.clip(dot_product, -1.0, 1.0)
+        return np.arccos(dot_product)
+
+    # AngleMCRXTX: Angolo tra (RX-Moon) e (RX-TX)
+    angle_mc_rx_tx = get_angle(rx_moon, tx_rx_vec)
+    # AngleECTXRX: PiGreco - Angolo tra (RX-TX) e (TX-Moon)
+    # Nota: nel VB usa VecDiff(Receiver, Transmitter) quindi il vettore punta verso RX.
+    angle_tx_rx_v_tx_moon = get_angle(tx_rx_vec, tx_moon)
+    angle_ec_tx_rx = np.pi - angle_tx_rx_v_tx_moon
+    # 8. Verifiche Finali
+    # Se l'angolo reale è maggiore dell'angolo di grazing, siamo "sopra" l'ostacolo
+    if angle_mc_rx_tx >= m_graze_angle_rx:
+        return True
+    if angle_ec_tx_rx >= m_graze_angle_tx:
+        return True
+    # Se nessuno dei check passa, c'è occultazione
+    return False
+
 
 def calculate_W(julian_day):
     """

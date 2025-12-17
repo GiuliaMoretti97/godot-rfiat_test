@@ -2,7 +2,6 @@
 # pyright: reportUnknownArgumentType=false
 # pyright: reportAttributeAccessIssue=false
 from godot import core, cosmos
-from matplotlib import markers
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -36,16 +35,16 @@ def test_moon_interpolation(
     t_interval_min = t_interval / 60.0
     filename = "interpolation_" + str(t_interval_min) +".txt" 
     # Linear Interpolation of Ephemeris Time Series
-    #with open(filename, "w") as f:
-    #    for i, tt in enumerate(mjd_timetag):
-    #        x_interpolated = np.interp(tt, mjd_points, x_points)
-    #        y_interpolated = np.interp(tt, mjd_points, y_points)
-    #        z_interpolated = np.interp(tt, mjd_points, z_points)
-    #        XYZ_error.append([x_interpolated - xyz_godot[i][0], y_interpolated - xyz_godot[i][1], z_interpolated - xyz_godot[i][2]])
-            
-    #        f.write(
-    #            f"{tt} {x_interpolated} {y_interpolated} {z_interpolated} {xyz_godot[i][0]} {xyz_godot[i][1]} {xyz_godot[i][2]} {XYZ_error[i][0]} {XYZ_error[i][1]} {XYZ_error[i][2]}\n"
-    #        )
+    with open(filename, "w") as f:
+        for i, tt in enumerate(mjd_timetag):
+            x_interpolated = np.interp(tt, mjd_points, x_points)
+            y_interpolated = np.interp(tt, mjd_points, y_points)
+            z_interpolated = np.interp(tt, mjd_points, z_points)
+            XYZ_error.append([x_interpolated - xyz_godot[i][0], y_interpolated - xyz_godot[i][1], z_interpolated - xyz_godot[i][2]])
+           
+            f.write(
+                f"{tt} {x_interpolated} {y_interpolated} {z_interpolated} {xyz_godot[i][0]} {xyz_godot[i][1]} {xyz_godot[i][2]} {XYZ_error[i][0]} {XYZ_error[i][1]} {XYZ_error[i][2]}\n"
+            )
 
     with open("moon_ephem.txt", "w") as f:
         for i, tt in enumerate(time_points):
@@ -55,14 +54,14 @@ def test_moon_interpolation(
             )
             
     # Plot Error
-    #plt.scatter(mjd_timetag, [XYZ_error[i][0] for i, tt in enumerate(mjd_timetag)], label="X Error (km)", marker = ".")
-    #plt.scatter(mjd_timetag, [XYZ_error[i][1] for i, tt in enumerate(mjd_timetag)], label="Y Error (km)", marker = ".")
-    #plt.scatter(mjd_timetag, [XYZ_error[i][2] for i, tt in enumerate(mjd_timetag)], label="Z Error (km)", marker = ".")
-    #plt.title("Linear Interpolation Error " + str(t_interval_min) + " min interval")
-    #plt.legend()
-    #plt.xlabel("MJD")
-    #plt.ylabel("Position Error (km)")
-    #plt.show(block = True)
+    plt.scatter(mjd_timetag, [XYZ_error[i][0] for i, tt in enumerate(mjd_timetag)], label="X Error (km)", marker = ".")
+    plt.scatter(mjd_timetag, [XYZ_error[i][1] for i, tt in enumerate(mjd_timetag)], label="Y Error (km)", marker = ".")
+    plt.scatter(mjd_timetag, [XYZ_error[i][2] for i, tt in enumerate(mjd_timetag)], label="Z Error (km)", marker = ".")
+    plt.title("Linear Interpolation Error " + str(t_interval_min) + " min interval")
+    plt.legend()
+    plt.xlabel("MJD")
+    plt.ylabel("Position Error (km)")
+    plt.show(block = True)
 
 if __name__ == "__main__":
     start = core.tempo.parseEpoch("2025-11-12T14:43:53.0 UTC")

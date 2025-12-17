@@ -131,8 +131,8 @@ def get_rotation_matrix_EME_to_ME(T, d):
     rot_z_phi = Rz(phi * np.pi / 180.0)
     tmp = rot_x_theta @ rot_z_phi
     rot_EME2PA = rot_z_psi @ tmp
-    rot_PA2ME = matrix_PA2ME()
     #! It is in the paper but formulation does not fit
+    # = matrix_PA2ME()
     #rot_EME2ME = rot_PA2ME @ rot_EME2PA
     rot_EME2ME =  rot_EME2PA
     return rot_EME2ME
